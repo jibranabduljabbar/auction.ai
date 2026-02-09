@@ -13,6 +13,10 @@ export async function updateSession(request: NextRequest) {
         return supabaseResponse;
     }
 
+    if (request.nextUrl.pathname.startsWith('/api/')) {
+        return supabaseResponse;
+    }
+
     const supabase = createServerClient(
         supabaseUrl,
         supabaseAnonKey,

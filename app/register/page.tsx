@@ -49,25 +49,44 @@ export default function RegisterPage() {
                 throw new Error('User creation failed. Please try again.');
             }
 
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            await new Promise(resolve => setTimeout(resolve, 1000));
 
-            const profileResponse = await fetch('/api/profiles/create', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
+            const { data: existingProfile } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('id', authData.user.id)
+                .maybeSingle();
+
+            if (!existingProfile) {
+                const profileData: any = {
+                    id: authData.user.id,
+                    email: authData.user.email || formData.email,
                     full_name: formData.fullName,
                     role: formData.role,
-                }),
-            });
+                };
 
-            if (!profileResponse.ok) {
-                const errorData = await profileResponse.json();
-                throw new Error(errorData.error || 'Profile creation failed. Please try logging in.');
+                const { error: profileError } = await ((supabase.from('profiles') as any)
+                    .insert(profileData));
+
+                if (profileError) {
+                    console.error('Profile creation error:', profileError);
+                    throw new Error(`Profile creation failed: ${profileError.message}`);
+                }
+            } else {
+                const { error: updateError } = await ((supabase.from('profiles') as any)
+                    .update({
+                        full_name: formData.fullName,
+                        role: formData.role,
+                    })
+                    .eq('id', authData.user.id));
+
+                if (updateError) {
+                    console.error('Profile update error:', updateError);
+                }
             }
 
-            router.push('/dashboard');
+            await supabase.auth.signOut();
+            router.push('/login');
             router.refresh();
         } catch (error: any) {
             setError(error.message || 'An error occurred');
