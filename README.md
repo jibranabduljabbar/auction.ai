@@ -1,36 +1,156 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# auction.ai - Modern Auction Marketplace
+
+A production-ready, scalable auction marketplace built with Next.js, Supabase, and Stripe Connect.
+
+## Features
+
+- ✅ User authentication (buyers & sellers)
+- ✅ Listings with images and metadata
+- ✅ Time-based auction system
+- ✅ Bid validation & increments
+- ✅ Soft-close / anti-sniping logic
+- ✅ Real-time bid updates (Supabase WebSockets)
+- ✅ Marketplace payments (Stripe Connect)
+- ✅ Platform fees & seller payouts
+- ✅ Admin tools for moderation
+
+## Tech Stack
+
+- **Frontend**: Next.js 16 (App Router), React, TypeScript
+- **Styling**: Tailwind CSS
+- **Backend**: Supabase (PostgreSQL, Auth, Real-time)
+- **Payments**: Stripe Connect
+- **State Management**: Zustand
+- **Form Handling**: React Hook Form + Zod
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+ 
+- npm or yarn
+- Supabase account
+- Stripe account
+
+### Installation
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd auction-ai
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables:
+```bash
+cp .env.local.example .env.local
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Fill in your environment variables:
+- `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase anon key
+- `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role key
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`: Your Stripe publishable key
+- `STRIPE_SECRET_KEY`: Your Stripe secret key
+- `STRIPE_WEBHOOK_SECRET`: Your Stripe webhook secret
+- `NEXT_PUBLIC_APP_URL`: Your app URL (e.g., http://localhost:3000)
+- `PLATFORM_FEE_PERCENTAGE`: Platform fee percentage (default: 5)
 
-## Learn More
+4. Set up the database:
+   - Go to your Supabase dashboard
+   - Run the SQL from `supabase/schema.sql` in the SQL editor
+   - Enable real-time for `listings` and `bids` tables in the Supabase dashboard
 
-To learn more about Next.js, take a look at the following resources:
+5. Set up Stripe:
+   - Create a Stripe account
+   - Get your API keys from the Stripe dashboard
+   - Set up webhooks pointing to `https://your-domain.com/api/stripe/webhook`
+   - Configure webhook events: `account.updated`, `payment_intent.succeeded`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+6. Run the development server:
+```bash
+npm run dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Deploy on Vercel
+## Project Structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+├── app/                    # Next.js app router pages
+│   ├── api/               # API routes
+│   ├── admin/             # Admin dashboard
+│   ├── dashboard/         # User dashboard
+│   ├── listings/          # Listing pages
+│   └── login/register/    # Auth pages
+├── components/            # React components
+│   ├── auction/          # Auction-specific components
+│   ├── layout/           # Layout components
+│   └── ui/               # UI components
+├── lib/                  # Utility functions
+│   ├── supabase/        # Supabase clients
+│   └── stripe.ts        # Stripe utilities
+├── supabase/            # Database schema
+└── types/               # TypeScript types
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Key Features Explained
+
+### Real-Time Bidding
+Uses Supabase real-time subscriptions to update bids and auction status instantly across all clients.
+
+### Soft-Close / Anti-Sniping
+When a bid is placed within the soft-close extension window (default: 5 minutes), the auction end time is automatically extended to prevent last-second sniping.
+
+### Bid Validation
+- Minimum bid increments based on current price
+- Prevents bidding on own listings
+- Validates auction is still active
+- Race condition protection via database constraints
+
+### Stripe Connect
+- Sellers complete Stripe onboarding to receive payouts
+- Platform fees are automatically calculated and deducted
+- Secure payment processing with Stripe Payment Intents
+- Automatic transfers to seller accounts
+
+## Deployment
+
+### Vercel (Recommended)
+
+1. Push your code to GitHub
+2. Import your repository in Vercel
+3. Add environment variables
+4. Deploy
+
+### Environment Variables for Production
+
+Make sure to set all environment variables in your hosting platform:
+- All Supabase keys
+- All Stripe keys
+- `NEXT_PUBLIC_APP_URL`: Your production URL
+- `CRON_SECRET`: Secret for cron job authentication (if using)
+
+### Cron Jobs
+
+Set up a cron job to call `/api/auctions/end` periodically (e.g., every minute) to automatically end expired auctions. Use a service like Vercel Cron or a separate cron service.
+
+## Security Considerations
+
+- Row Level Security (RLS) enabled on all tables
+- API routes protected with authentication
+- Stripe webhooks verified with signature
+- Input validation on all forms
+- SQL injection protection via Supabase
+
+## License
+
+MIT
+
+## Support
+
+For issues or questions, please open an issue in the repository.
